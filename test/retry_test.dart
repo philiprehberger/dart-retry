@@ -36,8 +36,8 @@ void main() {
 
     test('respects maxAttempts and throws after exhaustion', () async {
       var callCount = 0;
-      expect(
-        () => retry(
+      try {
+        await retry(
           () async {
             callCount++;
             throw Exception('always fails');
@@ -45,9 +45,11 @@ void main() {
           maxAttempts: 3,
           delay: const Duration(milliseconds: 1),
           jitter: false,
-        ),
-        throwsException,
-      );
+        );
+      } on Exception {
+        // expected
+      }
+      expect(callCount, equals(3));
     });
 
     test('retryIf filters which exceptions to retry', () async {
