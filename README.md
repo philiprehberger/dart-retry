@@ -16,7 +16,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  philiprehberger_retry: ^0.1.0
+  philiprehberger_retry: ^0.2.0
 ```
 
 Then run:
@@ -43,6 +43,17 @@ final result = await retry(
   backoffMultiplier: 1.5,
   jitter: true,
   timeout: Duration(seconds: 10),
+);
+```
+
+### Retry with Callback
+
+```dart
+await retry(
+  () => fetchData(),
+  onRetry: (attempt, error, delay) {
+    print('Attempt $attempt failed: $error. Retrying in $delay...');
+  },
 );
 ```
 
@@ -75,6 +86,7 @@ try {
 | Symbol | Description |
 |--------|-------------|
 | `retry()` | Retry an async operation with configurable backoff |
+| `onRetry` | Optional callback invoked before each retry with attempt number, error, and delay |
 | `CircuitBreaker` | Prevents repeated calls to a failing service |
 | `CircuitBreaker.execute()` | Execute a function through the circuit breaker |
 | `CircuitBreaker.state` | Current circuit state (closed, open, halfOpen) |

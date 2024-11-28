@@ -72,6 +72,47 @@ void main() {
       expect(callCount, equals(1));
     });
 
+    test('calls onRetry callback before each retry', () async {
+      var attempts = <int>[];
+      int callCount = 0;
+
+      await retry(
+        () async {
+          callCount++;
+          if (callCount < 3) throw Exception('fail');
+          return 'ok';
+        },
+        maxAttempts: 3,
+        delay: const Duration(milliseconds: 1),
+        jitter: false,
+        onRetry: (attempt, error, delay) {
+          attempts.add(attempt);
+        },
+      );
+
+      expect(attempts, [1, 2]);
+    });
+
+    test('onRetry receives the error from failed attempt', () async {
+      Object? receivedError;
+
+      try {
+        await retry(
+          () async {
+            throw const FormatException('bad');
+          },
+          maxAttempts: 2,
+          delay: const Duration(milliseconds: 1),
+          jitter: false,
+          onRetry: (attempt, error, delay) {
+            receivedError = error;
+          },
+        );
+      } catch (_) {}
+
+      expect(receivedError, isA<FormatException>());
+    });
+
     test('timeout causes TimeoutException', () async {
       expect(
         () => retry(
