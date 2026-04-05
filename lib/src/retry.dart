@@ -13,6 +13,7 @@ Future<T> retry<T>(
   bool jitter = true,
   bool Function(Exception)? retryIf,
   Duration? timeout,
+  void Function(int attempt, Object error, Duration delay)? onRetry,
 }) async {
   final random = Random();
   var currentDelay = delay;
@@ -31,6 +32,10 @@ Future<T> retry<T>(
       if (jitter) {
         final jitterMs = random.nextInt(currentDelay.inMilliseconds ~/ 2 + 1);
         waitTime = currentDelay + Duration(milliseconds: jitterMs);
+      }
+
+      if (onRetry != null) {
+        onRetry(attempt, e, waitTime);
       }
 
       await Future<void>.delayed(waitTime);
