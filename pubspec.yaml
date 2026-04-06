@@ -1,7 +1,7 @@
 name: philiprehberger_retry
 description: >-
   Configurable retry with exponential backoff, jitter, and circuit breaker
-version: 0.1.0
+version: 0.1.1
 homepage: https://philiprehberger.com/open-source-packages/dart/philiprehberger_retry
 repository: https://github.com/philiprehberger/dart-retry
 issue_tracker: https://github.com/philiprehberger/dart-retry/issues

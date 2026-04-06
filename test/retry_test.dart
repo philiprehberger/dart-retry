@@ -35,11 +35,9 @@ void main() {
     });
 
     test('respects maxAttempts and throws after exhaustion', () async {
-      var callCount = 0;
       expect(
         () => retry(
           () async {
-            callCount++;
             throw Exception('always fails');
           },
           maxAttempts: 3,

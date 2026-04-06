@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-06
+
+### Changed
+- Upgrade `lints` from 5.x to 5.x–6.x range
+- Fix unused variable lint in tests
+
 ## [0.1.0] - 2026-04-03
 
 ### Added
