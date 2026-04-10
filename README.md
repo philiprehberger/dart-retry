@@ -8,7 +8,7 @@ Configurable retry with exponential backoff, jitter, and circuit breaker
 
 ## Requirements
 
-- Dart >= 3.6
+- Dart >= 3.8
 
 ## Installation
 
@@ -16,7 +16,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  philiprehberger_retry: ^0.3.0
+  philiprehberger_retry: ^0.4.0
 ```
 
 Then run:
