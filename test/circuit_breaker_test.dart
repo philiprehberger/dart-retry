@@ -101,4 +101,88 @@ void main() {
       expect(result, equals('success'));
     });
   });
+
+  group('CircuitBreaker.onStateChange', () {
+    test('fires on closed -> open transition', () async {
+      final transitions = <(CircuitState, CircuitState)>[];
+      final breaker = CircuitBreaker(
+        failureThreshold: 1,
+        resetTimeout: const Duration(seconds: 30),
+        onStateChange: (from, to) => transitions.add((from, to)),
+      );
+
+      try {
+        await breaker.execute(() async => throw Exception('fail'));
+      } catch (_) {}
+
+      expect(transitions, equals([(CircuitState.closed, CircuitState.open)]));
+    });
+
+    test('fires on open -> halfOpen transition after timeout', () async {
+      final transitions = <(CircuitState, CircuitState)>[];
+      final breaker = CircuitBreaker(
+        failureThreshold: 1,
+        resetTimeout: const Duration(milliseconds: 50),
+        onStateChange: (from, to) => transitions.add((from, to)),
+      );
+
+      try {
+        await breaker.execute(() async => throw Exception('fail'));
+      } catch (_) {}
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      // Reading state triggers the lazy notification
+      expect(breaker.state, equals(CircuitState.halfOpen));
+      expect(transitions, contains((CircuitState.open, CircuitState.halfOpen)));
+    });
+
+    test('fires on halfOpen -> closed after successful execute', () async {
+      final transitions = <(CircuitState, CircuitState)>[];
+      final breaker = CircuitBreaker(
+        failureThreshold: 1,
+        resetTimeout: const Duration(milliseconds: 50),
+        onStateChange: (from, to) => transitions.add((from, to)),
+      );
+
+      try {
+        await breaker.execute(() async => throw Exception('fail'));
+      } catch (_) {}
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      await breaker.execute(() async => 'ok');
+
+      expect(transitions, contains((CircuitState.halfOpen, CircuitState.closed)));
+    });
+
+    test('reset triggers transition callback when state changed', () async {
+      final transitions = <(CircuitState, CircuitState)>[];
+      final breaker = CircuitBreaker(
+        failureThreshold: 1,
+        resetTimeout: const Duration(seconds: 30),
+        onStateChange: (from, to) => transitions.add((from, to)),
+      );
+
+      try {
+        await breaker.execute(() async => throw Exception('fail'));
+      } catch (_) {}
+      transitions.clear();
+
+      breaker.reset();
+      expect(transitions, equals([(CircuitState.open, CircuitState.closed)]));
+    });
+
+    test('does not fire when no transition occurs', () async {
+      final transitions = <(CircuitState, CircuitState)>[];
+      final breaker = CircuitBreaker(
+        failureThreshold: 3,
+        resetTimeout: const Duration(seconds: 30),
+        onStateChange: (from, to) => transitions.add((from, to)),
+      );
+
+      await breaker.execute(() async => 'ok');
+      await breaker.execute(() async => 'ok');
+
+      expect(transitions, isEmpty);
+    });
+  });
 }

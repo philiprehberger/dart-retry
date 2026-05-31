@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-30
+
+### Added
+- `CircuitBreaker.onStateChange` callback invoked on every transition between `closed`, `open`, and `halfOpen` — useful for metrics, logging, and alerting
+
+### Changed
+- Revert minimum Dart SDK from 3.8 back to 3.6 (no 3.8-only features are used and 3.6 is the package guide standard)
+
 ## [0.4.0] - 2026-04-06
 
 ### Changed

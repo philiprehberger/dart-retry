@@ -4,7 +4,11 @@ enum CircuitState { closed, open, halfOpen }
 /// A circuit breaker that prevents repeated calls to a failing service.
 ///
 /// ```dart
-/// final breaker = CircuitBreaker(failureThreshold: 3, resetTimeout: Duration(seconds: 30));
+/// final breaker = CircuitBreaker(
+///   failureThreshold: 3,
+///   resetTimeout: Duration(seconds: 30),
+///   onStateChange: (from, to) => log('breaker: $from -> $to'),
+/// );
 /// final result = await breaker.execute(() => fetchData());
 /// ```
 class CircuitBreaker {
@@ -14,24 +18,47 @@ class CircuitBreaker {
   /// How long to wait before trying again (half-open state).
   final Duration resetTimeout;
 
+  /// Optional callback fired whenever the circuit transitions between
+  /// states (closed, open, halfOpen).
+  ///
+  /// The `open → halfOpen` transition is detected lazily on the next read
+  /// of [state] or call to [execute].
+  final void Function(CircuitState from, CircuitState to)? onStateChange;
+
   int _failureCount = 0;
   CircuitState _state = CircuitState.closed;
+  CircuitState _lastObservedState = CircuitState.closed;
   DateTime? _lastFailure;
 
   /// Create a circuit breaker.
   CircuitBreaker({
     required this.failureThreshold,
     required this.resetTimeout,
+    this.onStateChange,
   });
 
   /// The current circuit state.
   CircuitState get state {
+    final current = _computeState();
+    _notifyIfChanged(current);
+    return current;
+  }
+
+  CircuitState _computeState() {
     if (_state == CircuitState.open && _lastFailure != null) {
       if (DateTime.now().difference(_lastFailure!) >= resetTimeout) {
         return CircuitState.halfOpen;
       }
     }
     return _state;
+  }
+
+  void _notifyIfChanged(CircuitState newState) {
+    if (newState != _lastObservedState) {
+      final from = _lastObservedState;
+      _lastObservedState = newState;
+      onStateChange?.call(from, newState);
+    }
   }
 
   /// Execute [fn] through the circuit breaker.
@@ -57,6 +84,7 @@ class CircuitBreaker {
   void _onSuccess() {
     _failureCount = 0;
     _state = CircuitState.closed;
+    _notifyIfChanged(CircuitState.closed);
   }
 
   void _onFailure() {
@@ -64,6 +92,7 @@ class CircuitBreaker {
     _lastFailure = DateTime.now();
     if (_failureCount >= failureThreshold) {
       _state = CircuitState.open;
+      _notifyIfChanged(CircuitState.open);
     }
   }
 
@@ -72,6 +101,7 @@ class CircuitBreaker {
     _failureCount = 0;
     _state = CircuitState.closed;
     _lastFailure = null;
+    _notifyIfChanged(CircuitState.closed);
   }
 }
 
